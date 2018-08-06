@@ -16,6 +16,8 @@ I did not implemented the "section of related devices by location", because of t
 
 I did not find a way to query the "Location Name" in the API, which sounds like it should be a string. I only found the location, which is a number.
 
+Also, I will comment the code.
+
 # What was the most useful feature that was added to the latest version of your chosen language?
 
 I don't know if it was added to the latest version, but as of JavaScript 1.8.5 you can use ```Object.keys(obj)``` to get an Array of the object ```obj``` properties. So, I did not have to use
