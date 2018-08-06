@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+  <head>
+       <meta charset="UTF-8">
+       <script src="https://unpkg.com/react@15/dist/react.min.js"></script>
+       <script src="https://unpkg.com/react-dom@15/dist/react-dom.min.js"></script>
+       <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.24.0/babel.js"></script>
+
+
+  </head>
+  <body>
+      <div id="root"></div>
+      <script type="text/babel">
+
+          function Summary(props) {
+              return (
+                  <label>
+                      Showing {props.number_of_elements} elements out of {props.total_elements}
+                  </label>
+              )
+          }
+
+          function Row(props) {
+              return (
+                  <div>
+                      {props.label}:{" "}
+                      {"" + props.value}
+                  </div>
+              )
+          }
+          function Detail(props) {
+              return (
+                  <div>
+                      <div>{props.detail_rows ? "Details of clicked item:" : ""}</div>
+                      <div>{props.detail_rows}</div>
+                  </div>
+              );
+          }
+
+          class ControlPanel extends React.Component
+          {
+              constructor(props) {
+                  super(props)
+                  this.state = { location_input: null,
+                                 parent_location_input: null,
+                                 connected_input: null,
+                                 number_of_elements: 0,
+                                 total_elements: 0,
+                                 data: null,
+                                 detail: null }
+                  this.inputHandler = this.inputHandler.bind(this)
+                  this.radioHandler = this.radioHandler.bind(this)
+                  this.itemClickedHandler = this.itemClickedHandler.bind(this)
+              }
+
+              itemClickedHandler(event, key) {
+                  if (key) {
+                      var url = 'https://recruitment-test-api.devsandbox.knetikcloud.com/devices?filter=id:' + key
+                      fetch(url)
+                          .then(response => response.json())
+                          .then(data => {
+                              var elements = data.content.map( (item, index) => {
+                                  return Object.keys(item).map((p, i) =>
+                                      <Row label={p} value={item[p]} />
+                                  )
+                              });
+                              this.setState((prevState, props) => {
+                                  return { detail: elements }});
+                          });
+                  }
+              }
+
+              radioHandler(input) {
+                  this.inputHandler(3, input);
+              }
+
+              inputHandler(id, input) {
+                  var url = 'https://recruitment-test-api.devsandbox.knetikcloud.com/devices?filter='
+                  var loc = this.state.location_input
+                  var parloc = this.state.parent_location_input
+                  var conn = this.state.connected_input
+                  if (id == 1) {
+                      if (input)
+                          url = url + 'location:' + input
+                      loc = input
+                      if (parloc) {
+                          if (input)
+                              url = url + '%7C' // pipe
+                          url = url + 'parent_location:' + parloc
+                      }
+                      if (conn != null) {
+                          if (input || parloc)
+                              url = url + '%7C' // pipe
+                          url = url + 'connected:' + conn
+                      }
+                  } else if (id == 2) {
+                      if (input)
+                          url = url + 'parent_location:' + input
+                      parloc = input
+                      if (loc) {
+                          if (input)
+                              url = url + '%7C' // pipe
+                          url = url + 'location:' + loc
+                      }
+                      if (conn != null) {
+                          if (input || loc)
+                              url = url + '%7C' // pipe
+                          url = url + 'connected:' + conn
+                      }
+                  } else if (id == 3) {
+                      if (input != null)
+                          url = url + 'connected:' + input
+                      conn = input
+                      if (loc) {
+                          if (input != null)
+                              url = url + '%7C' // pipe
+                          url = url + 'location:' + loc
+                      }
+                      if (parloc) {
+                          if (input != null || loc)
+                              url = url + '%7C' // pipe
+                          url = url + 'parent_location:' + parloc
+                      }
+                  }
+
+                  fetch(url)
+                      .then(response => response.json())
+                      .then(data => {
+                          if (data && data.content/* && data.content.length > 0*/) {
+                              this.setState({ location_input: loc,
+                                              parent_location_input: parloc,
+                                              connected_input: conn,
+                                              number_of_elements: data.number_of_elements,
+                                              total_elements: data.total_elements,
+                                              detail: null,
+                                              data })
+                          }});
+              }
+              render() {
+                  return (
+                      <div>
+                          <ControlledInput id = {1} label = "Location: " inputHandler = {this.inputHandler}/>
+                          <br/>
+                          <ControlledInput id = {2} label = "Parent Location: " inputHandler = {this.inputHandler}/>
+                          <BoolAnyRadio radioHandler = {this.radioHandler}/>
+                          <DeviceList items = {this.state.data} itemClickedHandler = {this.itemClickedHandler}/>
+                          <br/>
+                          <Summary number_of_elements={this.state.number_of_elements} total_elements={this.state.total_elements}/>
+                          <br/>
+                          <br/>
+                          <Detail detail_rows={this.state.detail}/>
+                      </div>
+                  )
+              }
+          }
+
+          class BoolAnyRadio extends React.Component
+          {
+              constructor(props) {
+                  super(props)
+                  this.state = { connected: null }
+                  this.valueHandler = this.valueHandler.bind(this)
+              }
+
+              valueHandler(e) {
+                  this.setState({
+                      connected: e.currentTarget.value == "true" ? true : (
+                                 e.currentTarget.value == "false" ? false: (
+                                 null))
+                  }, () => {this.props.radioHandler(this.state.connected) });
+              }
+
+              render() {
+                  var rows = (
+                      <tbody>
+                          <tr>
+                              <td><input type="radio" name="connected" 
+                                         value="true"
+                                         checked={this.state.connected === true}
+                                         onChange={this.valueHandler} />
+                                  Connected
+                              </td>
+                              <td><input type="radio" name="disconnected" 
+                                         value="false"
+                                         checked={this.state.connected === false}
+                                         onChange={this.valueHandler} />
+                                  Disconnected
+                              </td>
+                              <td><input type="radio" name="any" 
+                                         value="null"
+                                         checked={this.state.connected === null}
+                                         onChange={this.valueHandler} />
+                                  Any
+                              </td>
+                          </tr>
+                      </tbody>
+                  );
+                  return (
+                      <table className="table">
+                          {rows}
+                      </table>
+                  );
+              }
+          }
+
+          class ControlledInput extends React.Component
+          {
+              constructor(props) {
+                  super(props)
+                  this.state = { value: "" }
+                  this.handleChange = this.handleChange.bind(this)
+              }
+              handleChange(event) {
+                  this.setState({ value: event.target.value })
+                  this.props.inputHandler(this.props.id, event.target.value)
+              }
+              render() {
+                  return (
+                      <label>
+                          {this.props.label}
+                          <input onChange = {this.handleChange}/>
+                      </label>
+                  )
+              }
+          }
+
+          function ListItem(props) {
+              return <li onClick={props.onClick}>Status: {props.connection_status ? "connected" : "disconnected"} | Location: {props.location} | Updated at: {props.updated_at}</li>
+          }
+
+          class DeviceList extends React.Component
+          {
+              constructor(props) {
+                  super(props)
+              }
+              render() {
+                  if (this.props.items) {
+                      var elements = this.props.items.content.map( (item, index) => {
+                          return <ListItem key={item.id} onClick={(e) => this.props.itemClickedHandler(e, item.id)} connection_status={item.connected} location={item.location} updated_at={item.updated_at}/>
+                      })
+                  }
+                  return <ol>{elements}</ol>
+              }
+/*
+              componentDidMount() {
+                  fetch('https://recruitment-test-api.devsandbox.knetikcloud.com/devices')
+                      .then(response => response.json())
+                      .then(data => this.setState({ data }));
+              }
+ */
+          }
+
+          ReactDOM.render(
+              <ControlPanel/>,
+              document.getElementById('root')
+          )
+      </script>
+  </body>
+</html>
