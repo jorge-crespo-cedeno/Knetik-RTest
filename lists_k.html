@@ -53,6 +53,10 @@
                   this.itemClickedHandler = this.itemClickedHandler.bind(this)
               }
 
+              componentDidMount() {
+                  this.inputHandler(0, null);
+              }
+
               itemClickedHandler(event, key) {
                   if (key) {
                       var url = 'https://recruitment-test-api.devsandbox.knetikcloud.com/devices?filter=id:' + key
@@ -241,13 +245,6 @@
                   }
                   return <ol>{elements}</ol>
               }
-/*
-              componentDidMount() {
-                  fetch('https://recruitment-test-api.devsandbox.knetikcloud.com/devices')
-                      .then(response => response.json())
-                      .then(data => this.setState({ data }));
-              }
- */
           }
 
           ReactDOM.render(
