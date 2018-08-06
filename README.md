@@ -1,6 +1,6 @@
 # Coding Test
 
-## Instalation
+## Installation
 
 ```create-react-app any-app-name-you-want```
 
